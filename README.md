@@ -3,7 +3,7 @@
 ### A regular localization Library for pycord.
 
 ## Installation
-To install the Pycord18n, you can just run the following command:
+To install the pycord_ext_i18n, you can just run the following command:
 
 ```bash
 # Windows
