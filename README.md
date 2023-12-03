@@ -1,4 +1,4 @@
-# Pycord18n
+# Pycord_ext_i18n
 
 ### A regular localization Library for pycord.
 
