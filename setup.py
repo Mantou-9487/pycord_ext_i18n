@@ -6,15 +6,9 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding
     long_description = f.read()
 
 
-version = ""
-with open("pycord_ext_i18n/__init__.py") as f:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)
-
-if not version:
-    raise RuntimeError('Version is not set!')
 
 setup(name='pycord_ext_i18n',
-      version=version,
+      version='{{VERSION_PLACEHOLDER}}',
       author='mantouisyummy',
       author_email='opcantel@gmail.com',
       description='A regular localization Library for pycord.',
