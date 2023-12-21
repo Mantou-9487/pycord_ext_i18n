@@ -9,7 +9,7 @@ class ExampleCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @i18n.localize_slash_commands()
+    @i18n.localize_slash_command()
     async def test(self, ctx: ApplicationContext):
         await ctx.response.send_message(content=f"My command name is {ctx.command.name}!")
 
