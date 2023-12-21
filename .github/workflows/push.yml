@@ -27,7 +27,7 @@ jobs:
       run: echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
     - name: Update version in setup.py
       run: >-
-        sed -i "s/{{VERSION_PLACEHOLDER}}/${{ TAG_NAME }}/g" setup.py
+        sed -i "s/{{VERSION_PLACEHOLDER}}/${{ env.TAG_NAME }}/g" setup.py
     - name: Build and publish
       env:
         TWINE_USERNAME: __token__
