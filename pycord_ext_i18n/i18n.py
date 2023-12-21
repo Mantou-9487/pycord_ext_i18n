@@ -87,7 +87,6 @@ class I18n:
         locale: str | Locale,
         localizations: CommandLocalization  
     ) -> None:
-        print(localizations)
         name_localizations = {}
         description_localizations = {}
         if name := localizations.get('name'):
