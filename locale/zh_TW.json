@@ -1,3 +1,5 @@
 {
+    "commands.test.name": "測試",
+    "commands.test.description": "測試",
     "hello": "你好"
 }
