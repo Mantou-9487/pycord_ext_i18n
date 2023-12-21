@@ -1,20 +1,51 @@
 import json
 
+from discord import ContextMenuCommand, SlashCommand, utils
+
 from pathlib import Path
-from typing import Dict
+from typing import Dict, TypedDict, TypeVar, Union, Callable
 
 from .errors import PathNoexists
 from .utils import as_valid_locale
+from .enums import Locale
+
+
+class OptionLocalization(TypedDict, total=False):
+    name: str
+    description: str
+
+
+class CommandLocalization(OptionLocalization, total=False):
+    options: Dict[str, OptionLocalization]
+
+
+class Internationalization(TypedDict, total=False):
+    strings: Dict[str, str]
+    commands: Dict[str, CommandLocalization]
+
+Localizable = Union[SlashCommand, ContextMenuCommand]
+CommandT = TypeVar("CommandT", bound=Localizable)
 
 class I18n:
-    def __init__(self):
+    
+    instance: "I18n"
+    
+    def __init__(self, path: str = './locale' ,**internalizations: Internationalization):
+        self.path = path
         self._dict = {}
         self._paths = set()
+        self.localizations: Dict[Locale, Dict[str, CommandLocalization]] = {  # type: ignore
+            k.replace("_", "-"): commands
+            for k, v in internalizations.items()
+            if (commands := v)
+        }
+        
+        I18n.instance = self
 
-    def load(self, _path: str):
+    def load(self):
         self._dict = {}
         self._paths = set()
-        path = Path(_path)
+        path = Path(self.path)
         
         if path.is_file():
             self._load_file(path)
@@ -38,20 +69,58 @@ class I18n:
                 raise ValueError(f"invalid locale '{locale}'")
             locale = api_locale
 
-            data = json.loads(path.read_text("utf-8"))
-            self._load_dict(data, locale)
+            data: dict = json.loads(path.read_text("utf-8"))
+
+            for k, v in data.items():
+                parts = k.split(".")
+                command = parts[1]
+                if self.localizations.get(locale) is None:
+                    self.localizations[locale] = {command: {}}
+                parameter = parts[2]
+                self.localizations[locale][command].update({parameter: v})
+
         except Exception as e:
             raise RuntimeError(f"Unable to load '{path}': {e}") from e
+    
+    def _localize_command(
+        self,
+        locale: str | Locale,
+        localizations: CommandLocalization  
+    ) -> None:
+        print(localizations)
+        name_localizations = {}
+        description_localizations = {}
+        if name := localizations.get('name'):
+            if name_localizations is None:
+                name_localizations = {locale: name}
+            else:
+                name_localizations[locale] = name
+        if description := localizations.get("description"):
+            if description_localizations is None:
+                description_localizations = {locale: description}
+            else:
+                description_localizations[locale] = description
 
-    def _load_dict(self, data: Dict[str, str], locale: str) -> None:
-        if not isinstance(data, dict) or not all(
-            o is None or isinstance(o, str) for o in data.values()
-        ):
-            raise TypeError("data must be a flat dict with string/null values")
-        for key, value in data.items():
-            d = self._dict  # always create dict, regardless of value
-            if value is not None:
-                d[key] = {locale: value}
+        return name_localizations, description_localizations
+    
+    def localize_slash_command(self, **kwargs) -> CommandT:
+        self.load()
+        """A decorator to apply name and description localizations to a command."""
+        return self._localize_commands(**kwargs)
+    
+    def _localize_commands(self, **attrs):
+        def decorator(func: Callable) -> SlashCommand:
+            name_localizations = {}
+            for locale, localized in self.localizations.items():
+                if localizations := localized.get(func.__name__):
+                    name_localizations, description_localizations = self._localize_command(
+                        locale,
+                        localizations,
+                    )
+            return SlashCommand(func, name_localizations=name_localizations, description_localizations=description_localizations, **attrs)
+        
+        return decorator
+        
     
     def get(self, key: str):
         """Returns localizations for the specified key.
